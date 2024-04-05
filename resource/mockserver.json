@@ -1,0 +1,12 @@
+[
+  {
+    "httpRequest": {
+      "path": "/health",
+      "method": "GET"
+    },
+    "httpResponse": {
+      "body": "{\"message\":\"success\"}",
+      "statusCode": 200
+    }
+  }
+]

@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo
+    restart: always
+    networks:
+      - oauth
+    ports:
+      - "27017:27017"
+
+  mockserver:
+    restart: always
+    image: mockserver/mockserver:latest
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /resource/mockserver.json
+    volumes:
+      - .:/resource
+    networks:
+      - oauth
+    ports:
+      - "1080:1080"
+    command: -logLevel DEBUG -serverPort 1080
+
+networks:
+  oauth:
