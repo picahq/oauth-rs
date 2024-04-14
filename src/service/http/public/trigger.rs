@@ -50,5 +50,6 @@ pub async fn trigger_refresh(
         "outcome": outcome,
     });
 
-    Ok(HttpResponse::Ok().json(ServerResponse::new(ResponseType::Trigger, json)))
+    // Ok(HttpResponse::Ok().json(ServerResponse::new(ResponseType::Trigger, json)))
+    Ok(ServerResponse::from(ResponseType::Trigger, json, 200))
 }

@@ -3,10 +3,12 @@ mod application;
 mod middleware;
 mod public;
 
+use actix_web::{HttpResponse, HttpResponseBuilder};
 pub use admin::*;
 pub use application::*;
 pub use middleware::*;
 pub use public::*;
+use reqwest::StatusCode;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -24,48 +26,17 @@ where
     T: serde::Serialize,
 {
     #[serde(rename = "type")]
-    pub response_type: ResponseType,
+    pub r#type: ResponseType,
     pub args: T,
+    pub code: u16,
 }
 
 impl<T> ServerResponse<T>
 where
     T: serde::Serialize,
 {
-    pub fn new(response_type: ResponseType, args: T) -> Self {
-        Self {
-            response_type,
-            args,
-        }
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ServerError {
-    pub message: Vec<String>,
-}
-
-impl ServerError {
-    pub fn new(message: Vec<String>) -> Self {
-        Self { message }
-    }
-}
-
-impl From<Vec<String>> for ServerResponse<ServerError> {
-    fn from(message: Vec<String>) -> Self {
-        Self {
-            response_type: ResponseType::Error,
-            args: ServerError::new(message.iter().map(|s| s.to_string()).collect()),
-        }
-    }
-}
-
-impl<'a> From<Vec<&'a str>> for ServerResponse<ServerError> {
-    fn from(message: Vec<&'a str>) -> Self {
-        Self {
-            response_type: ResponseType::Error,
-            args: ServerError::new(message.iter().map(|s| s.to_string()).collect()),
-        }
+    pub fn from(r#type: ResponseType, args: T, code: u16) -> HttpResponse {
+        HttpResponseBuilder::new(StatusCode::from_u16(code).unwrap_or(StatusCode::OK))
+            .json(ServerResponse { r#type, args, code })
     }
 }

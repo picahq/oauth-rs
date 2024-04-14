@@ -13,5 +13,5 @@ pub async fn get_state(state: Data<AppState>) -> Result<HttpResponse, Error> {
         .await
         .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
 
-    Ok(HttpResponse::Ok().json(ServerResponse::new(ResponseType::Query, response)))
+    Ok(ServerResponse::from(ResponseType::Query, response, 200))
 }

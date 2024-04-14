@@ -10,16 +10,16 @@ pub use trigger::*;
 
 use chrono::{DateTime, Utc};
 use integrationos_domain::{
-    algebra::adapter::StoreAdapter, error::IntegrationOSError as Error, mongo::MongoDbStore,
-    Connection, Id,
+    algebra::{MongoStore, StoreExt},
+    Connection, Id, IntegrationOSError,
 };
 use mongodb::bson::doc;
 
 pub async fn get_connections_to_refresh(
-    collection: &MongoDbStore<Connection>,
+    collection: &MongoStore<Connection>,
     refresh_before: &DateTime<Utc>,
     refresh_after: &DateTime<Utc>,
-) -> Result<Vec<Connection>, Error> {
+) -> Result<Vec<Connection>, IntegrationOSError> {
     collection
         .get_many(
             Some(doc! {
@@ -37,9 +37,9 @@ pub async fn get_connections_to_refresh(
 }
 
 pub async fn get_connection_to_trigger(
-    collection: &MongoDbStore<Connection>,
+    collection: &MongoStore<Connection>,
     id: Id,
-) -> Result<Option<Connection>, Error> {
+) -> Result<Option<Connection>, IntegrationOSError> {
     collection
         .get_one(doc! {
             "_id": id.to_string(),

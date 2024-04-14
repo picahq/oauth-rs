@@ -7,7 +7,7 @@ use actix_web::{
     Error as ActixWebError, HttpMessage,
 };
 use actix_web_lab::middleware::Next;
-use integrationos_domain::{algebra::adapter::StoreAdapter, event_access::EventAccess, Claims};
+use integrationos_domain::{algebra::StoreExt, event_access::EventAccess, Claims};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use mongodb::bson::doc;
 use std::sync::Arc;

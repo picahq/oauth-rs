@@ -3,12 +3,11 @@ use crate::prelude::{Outcome, Trigger};
 use actix::prelude::*;
 use chrono::Duration;
 use integrationos_domain::{
-    algebra::adapter::StoreAdapter,
+    algebra::{MongoStore, StoreExt},
     api_model_config::ContentType,
     connection_oauth_definition::{Computation, ConnectionOAuthDefinition, OAuthResponse},
     error::IntegrationOSError as Error,
     get_secret_request::GetSecretRequest,
-    mongo::MongoDbStore,
     oauth_secret::OAuthSecret,
     service::secrets_client::SecretsClient,
     ApplicationError, Connection, Id, InternalError, OAuth,
@@ -21,8 +20,8 @@ use tracing::warn;
 use tracing_actix_web::RequestId;
 
 pub struct TriggerActor {
-    connections: Arc<MongoDbStore<Connection>>,
-    oauths: Arc<MongoDbStore<ConnectionOAuthDefinition>>,
+    connections: Arc<MongoStore<Connection>>,
+    oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
     secrets_client: Arc<SecretsClient>,
     request_id: Option<RequestId>,
     client: Client,
@@ -30,8 +29,8 @@ pub struct TriggerActor {
 
 impl TriggerActor {
     pub fn new(
-        connections: Arc<MongoDbStore<Connection>>,
-        oauths: Arc<MongoDbStore<ConnectionOAuthDefinition>>,
+        connections: Arc<MongoStore<Connection>>,
+        oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
         secrets_client: Arc<SecretsClient>,
         client: Client,
         request_id: Option<RequestId>,
