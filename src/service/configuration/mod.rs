@@ -1,7 +1,5 @@
 mod telemetry;
 
-use actix_governor::{KeyExtractor, PeerIpKeyExtractor, SimpleKeyExtractionError};
-use actix_web::dev::ServiceRequest;
 pub use telemetry::*;
 
 use envconfig::Envconfig;
@@ -10,7 +8,6 @@ use integrationos_domain::{
 };
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::net::IpAddr;
 
 #[derive(Clone, Envconfig)]
 pub struct OAuthConfig {
@@ -304,27 +301,5 @@ impl From<HashMap<&str, &str>> for Config {
         let oauth = OAuthConfig::from(value.clone());
         let server = ServerConfig::from(value);
         Self { oauth, server }
-    }
-}
-
-#[derive(Clone)]
-pub struct WhiteListKeyExtractor;
-
-impl KeyExtractor for WhiteListKeyExtractor {
-    type Key = IpAddr;
-    type KeyExtractionError = SimpleKeyExtractionError<&'static str>;
-
-    fn extract(&self, req: &ServiceRequest) -> Result<Self::Key, Self::KeyExtractionError> {
-        PeerIpKeyExtractor.extract(req)
-    }
-
-    fn whitelisted_keys(&self) -> Vec<Self::Key> {
-        // In case we want to add more private networks remember that the CIDR notation for
-        // 172s is 172.16.0.0/12 and for 192s is 192.168.0.0/16
-
-        "10.0.0.0/8"
-            .parse()
-            .map(|ip| vec![ip])
-            .unwrap_or_else(|_| vec![])
     }
 }
