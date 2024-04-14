@@ -7,7 +7,7 @@ use integrationos_domain::{
     Store,
 };
 use mongodb::{Client as MongoClient, Database};
-use oauth_api::prelude::{Application, Config};
+use oauth_api::{prelude::Config, Application};
 use once_cell::sync::Lazy;
 use rand::Rng;
 use reqwest::{header::HeaderMap, Client};
