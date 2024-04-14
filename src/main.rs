@@ -1,7 +1,7 @@
 use dotenvy::dotenv;
-use oauth_api::prelude::{
-    get_subscriber, init_subscriber, Application, Config, OAuthConfig, ServerConfig,
-};
+use oauth_api::{prelude::{
+    get_subscriber, init_subscriber, Config, OAuthConfig, ServerConfig,
+}, Application};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
