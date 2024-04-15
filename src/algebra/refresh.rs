@@ -5,9 +5,9 @@ use actix::prelude::*;
 use chrono::{Duration, Utc};
 use futures::lock::Mutex;
 use integrationos_domain::{
-    algebra::MongoStore, connection_oauth_definition::ConnectionOAuthDefinition,
-    error::IntegrationOSError as Error, service::secrets_client::SecretsClient, Connection,
-    InternalError,
+    algebra::MongoStore, client::secrets_client::SecretsClient,
+    connection_oauth_definition::ConnectionOAuthDefinition, error::IntegrationOSError as Error,
+    Connection, InternalError,
 };
 use reqwest::Client;
 use std::sync::Arc;

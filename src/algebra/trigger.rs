@@ -5,12 +5,12 @@ use chrono::Duration;
 use integrationos_domain::{
     algebra::{MongoStore, StoreExt},
     api_model_config::ContentType,
+    client::secrets_client::SecretsClient,
     connection_oauth_definition::{Computation, ConnectionOAuthDefinition, OAuthResponse},
     error::IntegrationOSError as Error,
     get_secret_request::GetSecretRequest,
     oauth_secret::OAuthSecret,
-    service::secrets_client::SecretsClient,
-    ApplicationError, Connection, Id, InternalError, OAuth,
+    ApplicationError, Connection, DefaultTemplate, Id, InternalError, OAuth, TemplateExt,
 };
 use mongodb::bson::{self, doc};
 use reqwest::Client;
@@ -75,6 +75,8 @@ impl Handler<Trigger> for TriggerActor {
         let request_id = self.request_id.map(|id| id.to_string());
 
         let future = async move {
+            let template = DefaultTemplate::default();
+
             let ask = || async {
                 let conn_id = match &msg.connection().oauth {
                     Some(OAuth::Enabled {
@@ -122,6 +124,12 @@ impl Handler<Trigger> for TriggerActor {
                     warn!("Failed to serialize secret: {}", e);
                     InternalError::serialize_error("Failed to serialize secret", None)
                 })?;
+
+                let conn_oauth_definition = if conn_oauth_definition.is_full_template_enabled {
+                    template.render_as(&conn_oauth_definition, Some(&compute_payload))?
+                } else {
+                    conn_oauth_definition
+                };
 
                 let computation = conn_oauth_definition
                     .compute
