@@ -189,11 +189,10 @@ impl Handler<Trigger> for TriggerActor {
                 let set = OAuth::Enabled {
                     connection_oauth_definition_id: *conn_id,
                     expires_at: Some(
-                        3600, // (chrono::Utc::now() + Duration::seconds(oauth_secret.expires_in as i64))
-                             //     .timestamp(),
+                        (chrono::Utc::now() + Duration::seconds(oauth_secret.expires_in as i64))
+                            .timestamp(),
                     ),
-                    expires_in: Some(1),
-                    //Some(oauth_secret.expires_in),
+                    expires_in: Some(oauth_secret.expires_in),
                 };
 
                 let data = doc! {
