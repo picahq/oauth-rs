@@ -7,9 +7,9 @@ pub use http::*;
 use crate::prelude::RefreshActor;
 use actix::{Addr, Supervisor};
 use integrationos_domain::{
-    algebra::MongoStore, connection_oauth_definition::ConnectionOAuthDefinition,
-    error::IntegrationOSError as Error, event_access::EventAccess,
-    service::secrets_client::SecretsClient, Connection, InternalError, Store,
+    algebra::MongoStore, client::secrets_client::SecretsClient,
+    connection_oauth_definition::ConnectionOAuthDefinition, error::IntegrationOSError as Error,
+    event_access::EventAccess, Connection, InternalError, Store,
 };
 use moka::future::Cache;
 use mongodb::options::FindOptions;

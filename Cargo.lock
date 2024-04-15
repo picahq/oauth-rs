@@ -1592,9 +1592,9 @@ dependencies = [
 
 [[package]]
 name = "integrationos-domain"
-version = "1.3.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcc08bc095761357574216a564449339a1af1f234188781f2fd41b917e8de288"
+checksum = "76a78a0dd3ee18eb766eb3dc833ef334f8f25f8fd160102a16b503016fa146db"
 dependencies = [
  "actix-web",
  "aes",
@@ -1633,6 +1633,8 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "tracing-bunyan-formatter",
+ "tracing-log 0.2.0",
  "tracing-subscriber",
  "uuid",
 ]
