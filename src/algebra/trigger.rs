@@ -61,6 +61,19 @@ impl Actor for TriggerActor {
 
 impl Supervised for TriggerActor {}
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct OAuthJson {
+    #[serde(flatten)]
+    pub json: serde_json::Value,
+    pub metadata: OAuthSecret,
+}
+
+impl OAuthJson {
+    pub fn as_json(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap_or_default()
+    }
+}
+
 impl Handler<Trigger> for TriggerActor {
     type Result = ResponseFuture<Outcome>;
 
@@ -171,13 +184,21 @@ impl Handler<Trigger> for TriggerActor {
                     InternalError::decryption_error("Failed to parse response", None)
                 })?;
 
+                // This is done because some platforms do not return a refresh token in the response
+                // (i.e. Salesforce). In these cases, we hold on to the original refresh token as a backup.
+                let json_oauth = OAuthJson {
+                    json: json.clone(),
+                    metadata: secret.clone(),
+                }
+                .as_json();
+
                 let decoded: OAuthResponse = conn_oauth_definition
                     .compute
                     .refresh
                     .response
-                    .compute(&json)
+                    .compute(&json_oauth)
                     .map_err(|e| {
-                        warn!("Failed to decode oauth response from {}: {}", json, e);
+                        warn!("Failed to decode oauth response from {}: {}", json_oauth, e);
                         InternalError::decryption_error("Failed to decode oauth response", None)
                     })?;
 
