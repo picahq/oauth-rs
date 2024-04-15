@@ -9,5 +9,5 @@ async fn health_check_works() {
     let response = application.get("health_check").await;
     // Assert
     assert!(response.status().is_success());
-    assert_eq!(Some(37), response.content_length());
+    assert_eq!(Some(48), response.content_length());
 }

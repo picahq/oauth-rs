@@ -127,7 +127,7 @@ async fn returns_404_inexistent_event() {
     let response = application.post(path, "", Some(headers)).await;
     // Assert
     let msg = format!(
-        "{{\"passthrough\":{{\"notFound\":{{\"message\":\"Connection with id {} not found\",\"subtype\":null}}}}}}",
+        "{{\"passthrough\":{{\"type\":\"NotFound\",\"code\":2005,\"status\":404,\"key\":\"err::application::not_found\",\"message\":\"Connection with id {} not found\"}}}}",
         id
     );
     assert_eq!(404, response.status().as_u16());
