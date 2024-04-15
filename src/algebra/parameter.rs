@@ -97,9 +97,9 @@ fn query(
             map
         });
 
-    computation
-        .and_then(|computation| computation.clone().query_params)
-        .map(|payload| {
+    match query_params {
+        Some(query_params) => {
+            let payload = computation.and_then(|computation| computation.clone().query_params);
             let handlebars = handlebars::Handlebars::new();
 
             let query_params_str = serde_json::to_string_pretty(&query_params).map_err(|e| {
@@ -126,13 +126,10 @@ fn query(
                     InternalError::encryption_error("Failed to serialize query params", None)
                 })?);
 
-            query_params
-        })
-        .transpose()
-        .map_err(|e| {
-            warn!("Failed to compute query params: {}", e);
-            InternalError::encryption_error("Failed to compute query params", None)
-        })
+            query_params.map(Some)
+        }
+        None => Ok(None),
+    }
 }
 
 fn headers(
@@ -155,9 +152,9 @@ fn headers(
             Some(map)
         });
 
-    computation
-        .and_then(|computation| computation.clone().headers)
-        .map(|payload| {
+    match headers {
+        Some(headers) => {
+            let payload = computation.and_then(|computation| computation.clone().headers);
             let handlebars = handlebars::Handlebars::new();
 
             let headers_str = serde_json::to_string_pretty(&headers).map_err(|e| {
@@ -197,11 +194,8 @@ fn headers(
                         Ok(header_map)
                     });
 
-            headers
-        })
-        .transpose()
-        .map_err(|e| {
-            warn!("Failed to compute headers: {}", e);
-            InternalError::encryption_error("Failed to compute headers", None)
-        })
+            headers.map(Some)
+        }
+        None => Ok(None),
+    }
 }
