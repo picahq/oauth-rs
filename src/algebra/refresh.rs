@@ -5,15 +5,16 @@ use actix::prelude::*;
 use chrono::{Duration, Utc};
 use futures::lock::Mutex;
 use integrationos_domain::{
-    connection_oauth_definition::ConnectionOAuthDefinition, error::IntegrationOSError as Error,
-    mongo::MongoDbStore, service::secrets_client::SecretsClient, Connection, InternalError,
+    algebra::MongoStore, connection_oauth_definition::ConnectionOAuthDefinition,
+    error::IntegrationOSError as Error, service::secrets_client::SecretsClient, Connection,
+    InternalError,
 };
 use reqwest::Client;
 use std::sync::Arc;
 
 pub struct RefreshActor {
-    connections: Arc<MongoDbStore<Connection>>,
-    oauths: Arc<MongoDbStore<ConnectionOAuthDefinition>>,
+    connections: Arc<MongoStore<Connection>>,
+    oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
     secrets: Arc<SecretsClient>,
     client: Client,
     state: Arc<Mutex<StatefulActor>>,
@@ -21,8 +22,8 @@ pub struct RefreshActor {
 
 impl RefreshActor {
     pub fn new(
-        oauths: Arc<MongoDbStore<ConnectionOAuthDefinition>>,
-        connections: Arc<MongoDbStore<Connection>>,
+        oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
+        connections: Arc<MongoStore<Connection>>,
         secrets: Arc<SecretsClient>,
         client: Client,
     ) -> Self {

@@ -7,9 +7,9 @@ pub use http::*;
 use crate::prelude::RefreshActor;
 use actix::{Addr, Supervisor};
 use integrationos_domain::{
-    connection_oauth_definition::ConnectionOAuthDefinition, error::IntegrationOSError as Error,
-    event_access::EventAccess, mongo::MongoDbStore, service::secrets_client::SecretsClient,
-    Connection, InternalError, Store,
+    algebra::MongoStore, connection_oauth_definition::ConnectionOAuthDefinition,
+    error::IntegrationOSError as Error, event_access::EventAccess,
+    service::secrets_client::SecretsClient, Connection, InternalError, Store,
 };
 use moka::future::Cache;
 use mongodb::options::FindOptions;
@@ -23,9 +23,9 @@ pub struct AppState {
     cache: Cache<HeaderValue, Arc<EventAccess>>,
     client: Client,
     secrets: Arc<SecretsClient>,
-    connections: Arc<MongoDbStore<Connection>>,
-    oauths: Arc<MongoDbStore<ConnectionOAuthDefinition>>,
-    event_access: Arc<MongoDbStore<EventAccess>>,
+    connections: Arc<MongoStore<Connection>>,
+    oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
+    event_access: Arc<MongoStore<EventAccess>>,
     refresh_actor: Addr<RefreshActor>,
 }
 
@@ -61,16 +61,14 @@ impl AppState {
 
         let database = mongo_client.database(config.oauth().database().control_db_name.as_ref());
         let secrets = SecretsClient::new(config.oauth().secrets_config())?;
-        let oauths = MongoDbStore::<ConnectionOAuthDefinition>::new_with_db(
-            database.clone(),
-            Store::ConnectionOAuthDefinitions,
+        let oauths = MongoStore::<ConnectionOAuthDefinition>::new(
+            &database,
+            &Store::ConnectionOAuthDefinitions,
         )
         .await?;
-        let connections =
-            MongoDbStore::<Connection>::new_with_db(database.clone(), Store::Connections).await?;
+        let connections = MongoStore::<Connection>::new(&database, &Store::Connections).await?;
         let cache = Cache::new(config.server().cache_size());
-        let event_access =
-            MongoDbStore::<EventAccess>::new_with_db(database.clone(), Store::EventAccess).await?;
+        let event_access = MongoStore::<EventAccess>::new(&database, &Store::EventAccess).await?;
 
         let oauths = Arc::new(oauths);
         let connections = Arc::new(connections);
@@ -105,7 +103,7 @@ impl AppState {
         &self.client
     }
 
-    pub fn connections(&self) -> &Arc<MongoDbStore<Connection>> {
+    pub fn connections(&self) -> &Arc<MongoStore<Connection>> {
         &self.connections
     }
 
@@ -113,11 +111,11 @@ impl AppState {
         &self.cache
     }
 
-    pub fn oauths(&self) -> &Arc<MongoDbStore<ConnectionOAuthDefinition>> {
+    pub fn oauths(&self) -> &Arc<MongoStore<ConnectionOAuthDefinition>> {
         &self.oauths
     }
 
-    pub fn event_access(&self) -> &Arc<MongoDbStore<EventAccess>> {
+    pub fn event_access(&self) -> &Arc<MongoStore<EventAccess>> {
         &self.event_access
     }
 

@@ -1,3 +1,0 @@
-[registries.CLOUDSMITH]
-index = "sparse+https://cargo.cloudsmith.io/integrationos/repository/"
-credential-provider = "cargo:token"

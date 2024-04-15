@@ -3,12 +3,11 @@ use crate::prelude::{Outcome, Trigger};
 use actix::prelude::*;
 use chrono::Duration;
 use integrationos_domain::{
-    algebra::adapter::StoreAdapter,
+    algebra::{MongoStore, StoreExt},
     api_model_config::ContentType,
     connection_oauth_definition::{Computation, ConnectionOAuthDefinition, OAuthResponse},
     error::IntegrationOSError as Error,
     get_secret_request::GetSecretRequest,
-    mongo::MongoDbStore,
     oauth_secret::OAuthSecret,
     service::secrets_client::SecretsClient,
     ApplicationError, Connection, Id, InternalError, OAuth,
@@ -21,8 +20,8 @@ use tracing::warn;
 use tracing_actix_web::RequestId;
 
 pub struct TriggerActor {
-    connections: Arc<MongoDbStore<Connection>>,
-    oauths: Arc<MongoDbStore<ConnectionOAuthDefinition>>,
+    connections: Arc<MongoStore<Connection>>,
+    oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
     secrets_client: Arc<SecretsClient>,
     request_id: Option<RequestId>,
     client: Client,
@@ -30,8 +29,8 @@ pub struct TriggerActor {
 
 impl TriggerActor {
     pub fn new(
-        connections: Arc<MongoDbStore<Connection>>,
-        oauths: Arc<MongoDbStore<ConnectionOAuthDefinition>>,
+        connections: Arc<MongoStore<Connection>>,
+        oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
         secrets_client: Arc<SecretsClient>,
         client: Client,
         request_id: Option<RequestId>,
@@ -77,20 +76,20 @@ impl Handler<Trigger> for TriggerActor {
 
         let future = async move {
             let ask = || async {
-                let id = match &msg.connection().oauth {
+                let conn_id = match &msg.connection().oauth {
                     Some(OAuth::Enabled {
-                        connection_oauth_definition_id,
+                        connection_oauth_definition_id: conn_oauth_definition_id,
                         ..
-                    }) => Ok(connection_oauth_definition_id),
+                    }) => Ok(conn_oauth_definition_id),
                     _ => Err(ApplicationError::not_found(
                         format!("Connection {} has no oauth", msg.connection().id).as_str(),
                         None,
                     )),
                 }?;
 
-                let definition = oauths
+                let conn_oauth_definition = oauths
                     .get_one(doc! {
-                        "_id": id.to_string(),
+                        "_id": conn_id.to_string(),
                     })
                     .await
                     .map_err(|e| {
@@ -101,7 +100,7 @@ impl Handler<Trigger> for TriggerActor {
                         )
                     })?
                     .ok_or(ApplicationError::not_found(
-                        format!("Connection oauth definition not found: {}", id).as_str(),
+                        format!("Connection oauth definition not found: {}", conn_id).as_str(),
                         None,
                     ))?;
 
@@ -121,10 +120,10 @@ impl Handler<Trigger> for TriggerActor {
 
                 let compute_payload = serde_json::to_value(&secret).map_err(|e| {
                     warn!("Failed to serialize secret: {}", e);
-                    InternalError::encryption_error("Failed to serialize secret", None)
+                    InternalError::serialize_error("Failed to serialize secret", None)
                 })?;
 
-                let computation = definition
+                let computation = conn_oauth_definition
                     .compute
                     .refresh
                     .computation
@@ -136,14 +135,14 @@ impl Handler<Trigger> for TriggerActor {
                         InternalError::encryption_error("Failed to parse computation payload", None)
                     })?;
 
-                let body = definition.body(&secret)?;
-                let query = definition.query(computation.as_ref())?;
-                let headers = definition.headers(computation.as_ref())?;
+                let body = conn_oauth_definition.body(&secret)?;
+                let query = conn_oauth_definition.query(computation.as_ref())?;
+                let headers = conn_oauth_definition.headers(computation.as_ref())?;
 
                 let request = client
-                    .post(definition.configuration.refresh.uri())
+                    .post(conn_oauth_definition.configuration.refresh.uri())
                     .headers(headers.unwrap_or_default());
-                let request = match definition.configuration.refresh.content {
+                let request = match conn_oauth_definition.configuration.refresh.content {
                     Some(ContentType::Json) => request.json(&body).query(&query),
                     Some(ContentType::Form) => request.form(&body).query(&query),
                     _ => request.query(&query),
@@ -164,7 +163,7 @@ impl Handler<Trigger> for TriggerActor {
                     InternalError::decryption_error("Failed to parse response", None)
                 })?;
 
-                let decoded: OAuthResponse = definition
+                let decoded: OAuthResponse = conn_oauth_definition
                     .compute
                     .refresh
                     .response
@@ -188,7 +187,7 @@ impl Handler<Trigger> for TriggerActor {
                     })?;
 
                 let set = OAuth::Enabled {
-                    connection_oauth_definition_id: *id,
+                    connection_oauth_definition_id: *conn_id,
                     expires_at: Some(
                         (chrono::Utc::now() + Duration::seconds(oauth_secret.expires_in as i64))
                             .timestamp(),
@@ -200,7 +199,7 @@ impl Handler<Trigger> for TriggerActor {
                     "$set": {
                         "oauth": bson::to_bson(&set).map_err(|e| {
                             warn!("Failed to serialize oauth: {}", e);
-                            InternalError::encryption_error("Failed to serialize oauth", None)
+                            InternalError::serialize_error("Failed to serialize oauth", None)
                         })?,
                         "secretsServiceId": secret.id,
                     }
@@ -220,7 +219,7 @@ impl Handler<Trigger> for TriggerActor {
                     msg.connection().id
                 );
 
-                Ok::<Id, Error>(*id)
+                Ok::<Id, Error>(*conn_id)
             };
 
             match ask().await {

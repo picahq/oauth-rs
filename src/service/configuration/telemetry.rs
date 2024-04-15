@@ -1,3 +1,4 @@
+use crate::PREFIX;
 use actix_web::body::MessageBody;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use tracing::subscriber::set_global_default;
@@ -8,8 +9,6 @@ use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
-
-use crate::prelude::PREFIX;
 
 pub struct Telemetry<T>
 where

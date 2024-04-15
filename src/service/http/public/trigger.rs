@@ -37,6 +37,7 @@ pub async fn trigger_refresh(
         Some(request_id),
     )
     .start();
+
     let id = connection.id;
     let trigger = Trigger::new(connection);
 
@@ -50,5 +51,5 @@ pub async fn trigger_refresh(
         "outcome": outcome,
     });
 
-    Ok(HttpResponse::Ok().json(ServerResponse::new(ResponseType::Trigger, json)))
+    Ok(ServerResponse::from(ResponseType::Trigger, json, 200))
 }
