@@ -1,5 +1,7 @@
-use crate::prelude::{
-    get_connection_to_trigger, AppState, ResponseType, ServerResponse, Trigger, TriggerActor,
+use crate::{
+    algebra::{StorageExt, TriggerActor},
+    domain::{Outcome, Trigger},
+    service::{AppState, ResponseType, ServerResponse},
 };
 use actix::Actor;
 use actix_web::{
@@ -10,6 +12,7 @@ use actix_web::{
 use integrationos_domain::{
     error::IntegrationOSError as Error, ApplicationError, Id, InternalError,
 };
+use reqwest::StatusCode;
 use serde_json::json;
 use tracing_actix_web::RequestId;
 
@@ -20,7 +23,10 @@ pub async fn trigger_refresh(
     state: Data<AppState>,
     id: Path<Id>,
 ) -> Result<HttpResponse, Error> {
-    let connection = get_connection_to_trigger(state.connections(), *id)
+    let id = id.into_inner();
+    let connection = state
+        .connections()
+        .get(id)
         .await?
         .ok_or(ApplicationError::not_found(
             format!("Connection with id {} not found", id).as_str(),
@@ -51,5 +57,14 @@ pub async fn trigger_refresh(
         "outcome": outcome,
     });
 
-    Ok(ServerResponse::from(ResponseType::Trigger, json, 200))
+    let status: StatusCode = match outcome {
+        Outcome::Success { .. } => StatusCode::OK,
+        Outcome::Failure { error, .. } => error.into(),
+    };
+
+    Ok(ServerResponse::from(
+        ResponseType::Trigger,
+        json,
+        status.into(),
+    ))
 }

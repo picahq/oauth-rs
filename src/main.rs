@@ -1,8 +1,6 @@
 use dotenvy::dotenv;
-use oauth_api::{
-    prelude::{get_subscriber, init_subscriber, Config, OAuthConfig, ServerConfig},
-    Application,
-};
+use integrationos_domain::telemetry::{get_subscriber, init_subscriber};
+use oauth_api::{Application, Configuration, OAuthConfig, ServerConfig};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,7 +11,7 @@ async fn main() -> anyhow::Result<()> {
 
     let oauth = OAuthConfig::load().expect("Failed to read configuration.");
     let server = ServerConfig::load().expect("Failed to read configuration.");
-    let configuration = Config::new(oauth, server);
+    let configuration = Configuration::new(oauth, server);
 
     let address = configuration.server().app_url().to_string();
     let application = Application::start(&configuration).await?;

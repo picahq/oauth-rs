@@ -1,5 +1,6 @@
-use super::Parameter;
-use crate::prelude::{Outcome, Trigger};
+use crate::domain::{Outcome, Trigger};
+
+use super::ParameterExt;
 use actix::prelude::*;
 use chrono::Duration;
 use integrationos_domain::{
@@ -256,8 +257,8 @@ impl Handler<Trigger> for TriggerActor {
                     Outcome::success(id.to_string().as_str(), json!({ "id": id.to_string() }))
                 }
                 Err(e) => Outcome::failure(
-                    msg.connection().id.to_string().as_str(),
-                    json!({ "error": e.to_string() }),
+                    e,
+                    json!({ "connectionId": msg.connection().id.to_string() }),
                 ),
             }
         };

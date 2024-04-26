@@ -154,12 +154,12 @@ impl ServerConfig {
 }
 
 #[derive(Clone)]
-pub struct Config {
+pub struct Configuration {
     oauth: OAuthConfig,
     server: ServerConfig,
 }
 
-impl Debug for Config {
+impl Debug for Configuration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let _ = f
             .debug_struct("OAuthConfig")
@@ -185,7 +185,7 @@ impl Debug for Config {
     }
 }
 
-impl Config {
+impl Configuration {
     pub fn new(oauth: OAuthConfig, server: ServerConfig) -> Self {
         Self { oauth, server }
     }
@@ -296,7 +296,7 @@ impl From<HashMap<&str, &str>> for ServerConfig {
     }
 }
 
-impl From<HashMap<&str, &str>> for Config {
+impl From<HashMap<&str, &str>> for Configuration {
     fn from(value: HashMap<&str, &str>) -> Self {
         let oauth = OAuthConfig::from(value.clone());
         let server = ServerConfig::from(value);

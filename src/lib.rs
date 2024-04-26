@@ -2,15 +2,10 @@ mod algebra;
 mod domain;
 mod service;
 
-pub mod prelude {
-    pub use super::algebra::*;
-    pub use super::domain::*;
-    pub use super::service::*;
+pub use algebra::*;
+pub use domain::*;
+pub use service::*;
 
-    pub type Unit = ();
-}
-
-use crate::prelude::{AppState, Config, Refresh, Tracer, Unit};
 use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{
@@ -20,14 +15,10 @@ use actix_web::{
 };
 use actix_web_lab::middleware::from_fn;
 use anyhow::Context;
-use futures::Future;
-use prelude::{admin_middleware, get_state, health_check, sensitive_middleware, trigger_refresh};
-use std::{net::TcpListener, pin::Pin, time::Duration};
+use std::{net::TcpListener, time::Duration};
 
 pub const PREFIX: &str = "/v1";
-pub const ADMIN_PREFIX: &str = "/admin";
 pub const INTEGRATION_PREFIX: &str = "/integration";
-type Task = Pin<Box<dyn Future<Output = Unit> + Send + Sync>>;
 
 pub struct Application {
     port: u16,
@@ -36,7 +27,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn start(configuration: &Config) -> Result<Self, anyhow::Error> {
+    pub async fn start(configuration: &Configuration) -> Result<Self, anyhow::Error> {
         tracing::info!(
             "Starting application with configuration: {}{:#?}{}",
             "\n",
@@ -100,7 +91,7 @@ impl Application {
 
 async fn run(
     listener: TcpListener,
-    configuration: Config,
+    configuration: Configuration,
     state: AppState,
 ) -> Result<Server, anyhow::Error> {
     let governor = GovernorConfigBuilder::default()
@@ -124,14 +115,10 @@ async fn run(
             )
             .wrap(Governor::new(&governor))
             .service(
-                scope(&(PREFIX.to_owned() + ADMIN_PREFIX)) // /v1/admin
-                    .wrap(from_fn(sensitive_middleware))
-                    .service(get_state),
-            )
-            .service(
                 scope(&(PREFIX.to_owned() + INTEGRATION_PREFIX)) // /v1/integration
-                    .wrap(from_fn(admin_middleware))
-                    .service(trigger_refresh),
+                    .wrap(from_fn(auth_middleware))
+                    .service(trigger_refresh)
+                    .service(get_state),
             )
             .service(scope(PREFIX).service(health_check)) // /v1
             .app_data(Data::new(state.clone()))

@@ -1,11 +1,19 @@
-use serde::{Deserialize, Serialize};
+use integrationos_domain::IntegrationOSError;
+use serde::Serialize;
 use serde_json::Value;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
 pub enum Outcome {
-    Success { message: String, metadata: Value },
-    Failure { message: String, metadata: Value },
+    Success {
+        message: String,
+        metadata: Value,
+    },
+    Failure {
+        error: IntegrationOSError,
+        metadata: Value,
+    },
 }
 
 impl Outcome {
@@ -16,10 +24,7 @@ impl Outcome {
         }
     }
 
-    pub fn failure(message: &str, metadata: Value) -> Self {
-        Self::Failure {
-            message: message.to_string(),
-            metadata,
-        }
+    pub fn failure(error: IntegrationOSError, metadata: Value) -> Self {
+        Self::Failure { error, metadata }
     }
 }

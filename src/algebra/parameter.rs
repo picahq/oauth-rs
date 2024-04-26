@@ -13,13 +13,13 @@ use std::{
 };
 use tracing::warn;
 
-pub trait Parameter {
+pub trait ParameterExt {
     fn headers(&self, computation: Option<&Computation>) -> Result<Option<HeaderMap>, Error>;
     fn body(&self, secret: &OAuthSecret) -> Result<Option<Value>, Error>;
     fn query(&self, computation: Option<&Computation>) -> Result<Option<Value>, Error>;
 }
 
-impl Parameter for ConnectionOAuthDefinition {
+impl ParameterExt for ConnectionOAuthDefinition {
     fn headers(&self, computation: Option<&Computation>) -> Result<Option<HeaderMap>, Error> {
         headers(self, computation)
     }

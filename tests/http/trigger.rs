@@ -1,6 +1,7 @@
 use crate::suite::TestApp;
 use integrationos_domain::{prefix::IdPrefix, Id};
-use oauth_api::prelude::{JwtTokenGenerator, TokenGenerator};
+use mark_flaky_tests::flaky;
+use oauth_api::{Token, TokenExt};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -17,13 +18,12 @@ async fn returns_401_for_missing_headers() {
 }
 
 #[actix::test]
-#[ignore = "BsonSerialization is failing with UnsignedIntegerExceededRange on CI"]
 async fn returns_404_for_invalid_prefix_id() {
     // Arrange
     let application = TestApp::spawn(HashMap::new()).await;
     let event_access = application.insert_event_access().await;
     let event_access_token = event_access.access_key;
-    let token = JwtTokenGenerator
+    let token = Token
         .generate(application.configuration().clone(), 1)
         .expect("Failed to generate token");
 
@@ -58,12 +58,11 @@ async fn returns_404_for_invalid_prefix_id() {
 }
 
 #[actix::test]
-#[ignore = "BsonSerialization is failing with UnsignedIntegerExceededRange on CI"]
 async fn returns_401_for_non_existent_event_access() {
     // Arrange
     let application = TestApp::spawn(HashMap::new()).await;
     let event_access = "sk_live_1_Gom7umYOtRPyCbx4o2XNIlM32-2wf2dPI6s7nsdlWeXuhRj1rgDEvFeYAVckQvwG-5IUzRHGWnloNx2fci7IdFcdlTqYAuUuj6QQZPOvS2sxGK4YKnkmS1UFqcXFDCsSYZxASBaqJaBZA1HMEVuv61-cepuCBJccX90hXqQlKZvZ5s0i8hRZszeCA9b3H18paLy7";
-    let token = JwtTokenGenerator
+    let token = Token
         .generate(application.configuration().clone(), 1)
         .expect("Failed to generate token");
     let headers = HeaderMap::from_iter(vec![
@@ -99,15 +98,14 @@ async fn returns_401_for_non_existent_event_access() {
 }
 
 #[actix::test]
-// #[flaky]
-#[ignore = "BsonSerialization is failing with UnsignedIntegerExceededRange on CI"]
+#[flaky]
 async fn returns_404_inexistent_event() {
     // Arrange
     let application = TestApp::spawn(HashMap::new()).await;
     let event_access = application.insert_event_access().await;
     let event_access_token = event_access.access_key;
 
-    let token = JwtTokenGenerator
+    let token = Token
         .generate(application.configuration().clone(), 1)
         .expect("Failed to generate token");
 

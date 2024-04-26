@@ -1,4 +1,4 @@
-use crate::prelude::Outcome;
+use crate::domain::Outcome;
 use actix::prelude::*;
 use integrationos_domain::Connection;
 
