@@ -1,10 +1,10 @@
-mod admin;
+mod private;
 mod public;
 
-pub use admin::*;
+pub use private::*;
 pub use public::*;
 
-use crate::prelude::AppState;
+use super::AppState;
 use actix_web::{
     body::MessageBody,
     dev::{ServiceRequest, ServiceResponse},
@@ -51,28 +51,7 @@ where
     }
 }
 
-pub async fn sensitive_middleware(
-    req: ServiceRequest,
-    next: Next<impl MessageBody>,
-) -> Result<ServiceResponse<impl MessageBody>, ActixWebError> {
-    let state = req.app_data::<Data<AppState>>();
-    let state = match state {
-        None => return Err(ErrorUnauthorized("No state found")),
-        Some(state) => state,
-    };
-
-    let extracted_info = extract_admin_info(&req, state);
-
-    match extracted_info {
-        Ok(claims) => {
-            req.extensions_mut().insert(claims.to_owned());
-            next.call(req).await
-        }
-        Err(err) => Err(ErrorUnauthorized(err)),
-    }
-}
-
-pub async fn admin_middleware(
+pub async fn auth_middleware(
     req: ServiceRequest,
     next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, ActixWebError> {
@@ -83,7 +62,7 @@ pub async fn admin_middleware(
     };
 
     let event_access = extract_event_info(&req, state).await;
-    let claims = extract_admin_info(&req, state);
+    let claims = claims(&req, state);
 
     match (event_access, claims) {
         (Ok(event_access), Ok(claims)) => {
@@ -95,10 +74,7 @@ pub async fn admin_middleware(
     }
 }
 
-fn extract_admin_info(
-    req: &ServiceRequest,
-    state: &Data<AppState>,
-) -> Result<Claims, ActixWebError> {
+fn claims(req: &ServiceRequest, state: &Data<AppState>) -> Result<Claims, ActixWebError> {
     let token = req
         .headers()
         .get(state.configuration().server().admin_header())

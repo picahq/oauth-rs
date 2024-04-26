@@ -3,11 +3,11 @@ use fake::{Fake, Faker};
 use integrationos_domain::{
     access_key_data::AccessKeyData, access_key_prefix::AccessKeyPrefix,
     connection_model_definition::ConnectionModelDefinition, encrypted_data::PASSWORD_LENGTH,
-    environment::Environment, event_access::EventAccess, event_type::EventType, AccessKey, Id,
-    Store,
+    environment::Environment, event_access::EventAccess, event_type::EventType, prefix::IdPrefix,
+    AccessKey, Id, Store,
 };
 use mongodb::{Client as MongoClient, Database};
-use oauth_api::{prelude::Config, Application};
+use oauth_api::Configuration;
 use once_cell::sync::Lazy;
 use rand::Rng;
 use reqwest::{header::HeaderMap, Client};
@@ -17,7 +17,7 @@ use uuid::Uuid;
 pub struct TestApp {
     client: Client,
     address: String,
-    configuration: Config,
+    configuration: Configuration,
     mongo: Database,
 }
 
@@ -28,13 +28,7 @@ pub static EPOCH: Lazy<DateTime<Utc>> = Lazy::new(|| {
         &NaiveDateTime::from_timestamp_opt(0, 0).expect("Failed to create timestamp"),
     )
 });
-pub static ID: Lazy<Id> = Lazy::new(|| {
-    Id::new_with_uuid(
-        integrationos_domain::prefix::IdPrefix::ConnectionModelDefinition,
-        *EPOCH,
-        Uuid::nil(),
-    )
-});
+pub static ID: Lazy<Id> = Lazy::new(|| Id::now(IdPrefix::ConnectionModelDefinition));
 pub static EVENT_ACCESS_PASSWORD: Lazy<[u8; PASSWORD_LENGTH]> = Lazy::new(|| {
     "32KFFT_i4UpkJmyPwY2TGzgHpxfXs7zS"
         .as_bytes()
@@ -75,10 +69,12 @@ impl TestApp {
     pub async fn spawn(config: HashMap<&str, &str>) -> Self {
         use std::collections::hash_map::RandomState;
 
+        use oauth_api::Application;
+
         let url = "mongodb://127.0.0.1:27017/?directConnection=true";
         let uuid = Uuid::new_v4().to_string();
 
-        let configuration = Config::from(
+        let configuration = Configuration::from(
             HashMap::<&str, &str, RandomState>::from_iter([
                 ("HOST", "localhost"),
                 ("PORT", "0"),
@@ -142,7 +138,9 @@ impl TestApp {
         let access_key = self.access_key_encoded();
 
         event_access.access_key = access_key;
-        event_access.record_metadata.deleted = false;
+        event_access.paths = Default::default();
+        event_access.throughput = Default::default();
+        event_access.record_metadata = Default::default();
 
         let _ = self
             .mongo
@@ -162,7 +160,7 @@ impl TestApp {
                 version: 1,
             },
             data: AccessKeyData {
-                id: Uuid::new_v4().to_string(),
+                id: Id::now(IdPrefix::EventAccess).to_string(),
                 namespace: "namespace".to_string(),
                 event_type: "event_type".to_string(),
                 group: "group".to_string(),
@@ -188,7 +186,7 @@ impl TestApp {
         &self.address
     }
 
-    pub fn configuration(&self) -> &Config {
+    pub fn configuration(&self) -> &Configuration {
         &self.configuration
     }
 

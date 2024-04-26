@@ -4,7 +4,7 @@ mod http;
 pub use configuration::*;
 pub use http::*;
 
-use crate::prelude::RefreshActor;
+use crate::algebra::RefreshActor;
 use actix::{Addr, Supervisor};
 use integrationos_domain::{
     algebra::MongoStore, client::secrets_client::SecretsClient,
@@ -19,7 +19,7 @@ use tokio::time::timeout;
 
 #[derive(Clone, Debug)]
 pub struct AppState {
-    configuration: Config,
+    configuration: Configuration,
     cache: Cache<HeaderValue, Arc<EventAccess>>,
     client: Client,
     secrets: Arc<SecretsClient>,
@@ -30,7 +30,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn try_from(config: Config) -> Result<Self, Error> {
+    pub async fn try_from(config: Configuration) -> Result<Self, Error> {
         let client = Client::builder()
             .timeout(Duration::from_millis(config.server().timeout()))
             .build()
@@ -95,7 +95,7 @@ impl AppState {
         })
     }
 
-    pub fn configuration(&self) -> &Config {
+    pub fn configuration(&self) -> &Configuration {
         &self.configuration
     }
 

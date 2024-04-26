@@ -1,17 +1,17 @@
-use crate::prelude::Config;
+use crate::service::Configuration;
 use chrono::{Duration, Utc};
 use integrationos_domain::{Claims, IntegrationOSError as Error, InternalError};
 use jsonwebtoken::{encode, EncodingKey, Header};
 
-pub trait TokenGenerator {
-    fn generate(&self, configuration: Config, expiration: i64) -> Result<String, Error>;
+pub trait TokenExt {
+    fn generate(&self, configuration: Configuration, expiration: i64) -> Result<String, Error>;
 }
 
 #[derive(Debug, Default)]
-pub struct JwtTokenGenerator;
+pub struct Token;
 
-impl TokenGenerator for JwtTokenGenerator {
-    fn generate(&self, configuration: Config, expiration: i64) -> Result<String, Error> {
+impl TokenExt for Token {
+    fn generate(&self, configuration: Configuration, expiration: i64) -> Result<String, Error> {
         let key = configuration.server().admin_secret();
         let key = key.as_bytes();
         let key = EncodingKey::from_secret(key);

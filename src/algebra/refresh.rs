@@ -1,5 +1,6 @@
-use crate::prelude::{
-    get_connections_to_refresh, Query, Refresh, StatefulActor, Trigger, TriggerActor, Unit,
+use crate::{
+    algebra::{StorageExt, TriggerActor},
+    domain::{Query, Refresh, StatefulActor, Trigger, Unit},
 };
 use actix::prelude::*;
 use chrono::{Duration, Utc};
@@ -66,9 +67,9 @@ impl Handler<Refresh> for RefreshActor {
         let state = self.state.clone();
 
         Box::pin(async move {
-            let connections =
-                get_connections_to_refresh(&connections_store, &refresh_before, &refresh_after)
-                    .await?;
+            let connections = connections_store
+                .get_by(&refresh_before, &refresh_after)
+                .await?;
 
             tracing::info!("Found {} connections to refresh", connections.len());
 
