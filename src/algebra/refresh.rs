@@ -56,8 +56,8 @@ impl Handler<Refresh> for RefreshActor {
         let refresh_after = refresh_before + Duration::minutes(msg.refresh_before_in_minutes());
         tracing::info!(
             "Searching for connections to refresh between {} and {}",
-            refresh_before,
-            refresh_after
+            refresh_before.timestamp(),
+            refresh_after.timestamp()
         );
 
         let secrets = self.secrets.clone();

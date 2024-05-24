@@ -1,9 +1,8 @@
-use std::sync::Arc;
-
 use chrono::{DateTime, Utc};
 use futures::lock::Mutex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
