@@ -59,7 +59,7 @@ pub async fn trigger_refresh(
 
     let status: StatusCode = match outcome {
         Outcome::Success { .. } => StatusCode::OK,
-        Outcome::Failure { error, .. } => error.into(),
+        Outcome::Failure { error, .. } => (&error).into(),
     };
 
     Ok(ServerResponse::from(

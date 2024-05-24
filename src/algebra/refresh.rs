@@ -67,9 +67,14 @@ impl Handler<Refresh> for RefreshActor {
         let state = self.state.clone();
 
         Box::pin(async move {
+            tracing::info!("Searching for connections to refresh");
             let connections = connections_store
                 .get_by(&refresh_before, &refresh_after)
-                .await?;
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to get connections to refresh: {:?}", e);
+                    e
+                })?;
 
             tracing::info!("Found {} connections to refresh", connections.len());
 

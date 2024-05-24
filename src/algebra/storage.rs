@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use integrationos_domain::{Connection, Id, IntegrationOSError, MongoStore, StoreExt};
+use integrationos_domain::{Connection, Id, IntegrationOSError, MongoStore};
 use mongodb::bson::doc;
 
 #[async_trait]
@@ -24,7 +24,7 @@ impl StorageExt for MongoStore<Connection> {
         self.get_many(
             Some(doc! {
                 "oauth.enabled.expires_at": doc! {
-                    "$gt": refresh_before.timestamp(),
+                    "$gte": refresh_before.timestamp(),
                     "$lte": refresh_after.timestamp(),
                 },
             }),
