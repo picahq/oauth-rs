@@ -12,12 +12,11 @@ use actix_web::{
     web::Data,
     Error as ActixWebError, HttpMessage,
 };
-use actix_web::{HttpResponse, HttpResponseBuilder};
+use actix_web::{http::StatusCode, HttpResponse, HttpResponseBuilder};
 use actix_web_lab::middleware::Next;
-use integrationos_domain::{algebra::StoreExt, event_access::EventAccess, Claims};
+use integrationos_domain::{event_access::EventAccess, Claims};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use mongodb::bson::doc;
-use reqwest::StatusCode;
 use std::sync::Arc;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]

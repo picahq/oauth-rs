@@ -6,6 +6,7 @@ pub use http::*;
 
 use crate::algebra::RefreshActor;
 use actix::{Addr, Supervisor};
+use actix_web::http::header::HeaderValue;
 use integrationos_domain::{
     algebra::MongoStore, client::secrets_client::SecretsClient,
     connection_oauth_definition::ConnectionOAuthDefinition, error::IntegrationOSError as Error,
@@ -13,7 +14,7 @@ use integrationos_domain::{
 };
 use moka::future::Cache;
 use mongodb::options::FindOptions;
-use reqwest::{header::HeaderValue, Client};
+use reqwest::Client;
 use std::{sync::Arc, time::Duration};
 use tokio::time::timeout;
 

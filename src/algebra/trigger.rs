@@ -1,10 +1,9 @@
-use crate::domain::{Outcome, Trigger};
-
 use super::ParameterExt;
+use crate::domain::{Outcome, Trigger};
 use actix::prelude::*;
 use chrono::Duration;
 use integrationos_domain::{
-    algebra::{MongoStore, StoreExt},
+    algebra::MongoStore,
     api_model_config::ContentType,
     client::secrets_client::SecretsClient,
     connection_oauth_definition::{Computation, ConnectionOAuthDefinition, OAuthResponse},
