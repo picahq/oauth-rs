@@ -2077,7 +2077,6 @@ dependencies = [
  "fake",
  "futures",
  "handlebars 5.1.2",
- "http 1.1.0",
  "integrationos-domain",
  "jsonwebtoken",
  "mark-flaky-tests",

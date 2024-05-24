@@ -19,7 +19,6 @@ dotenvy = "0.15.7"
 envconfig = "0.10.0"
 futures = "0.3.30"
 handlebars = "5.1.1"
-http = "1.1.0"
 integrationos-domain = { version = "4.1.6", features = ["dummy", "actix-error"] }
 jsonwebtoken = "9.2.0"
 moka = { version = "0.12.5", features = ["future"] }
