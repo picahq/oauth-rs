@@ -117,7 +117,7 @@ async fn run(
             .service(
                 scope(&(PREFIX.to_owned() + INTEGRATION_PREFIX)) // /v1/integration
                     .wrap(from_fn(auth_middleware))
-                    .service(trigger_refresh)
+                    .service(trigger_refresh),
             )
             .service(scope(PREFIX).service(health_check)) // /v1
             .app_data(Data::new(state.clone()))

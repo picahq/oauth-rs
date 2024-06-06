@@ -1,11 +1,9 @@
 mod outcome;
 mod refresh;
-mod state;
 mod trigger;
 
 pub use outcome::*;
 pub use refresh::*;
-pub use state::*;
 pub use trigger::*;
 
 use futures::Future;
