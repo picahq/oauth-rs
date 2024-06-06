@@ -1,10 +1,9 @@
 use crate::{
     algebra::{StorageExt, TriggerActor},
-    domain::{Query, Refresh, StatefulActor, Trigger, Unit},
+    domain::{Refresh, Trigger, Unit},
 };
 use actix::prelude::*;
 use chrono::{Duration, Utc};
-use futures::lock::Mutex;
 use integrationos_domain::{
     algebra::MongoStore, client::secrets_client::SecretsClient,
     connection_oauth_definition::ConnectionOAuthDefinition, error::IntegrationOSError as Error,
@@ -18,7 +17,6 @@ pub struct RefreshActor {
     oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
     secrets: Arc<SecretsClient>,
     client: Client,
-    state: Arc<Mutex<StatefulActor>>,
 }
 
 impl RefreshActor {
@@ -33,7 +31,6 @@ impl RefreshActor {
             oauths,
             secrets,
             client,
-            state: StatefulActor::empty(),
         }
     }
 }
@@ -64,7 +61,6 @@ impl Handler<Refresh> for RefreshActor {
         let client = self.client.clone();
         let connections_store = self.connections.clone();
         let oauths_store = self.oauths.clone();
-        let state = self.state.clone();
 
         Box::pin(async move {
             tracing::info!("Searching for connections to refresh");
@@ -99,14 +95,6 @@ impl Handler<Refresh> for RefreshActor {
                 .collect::<Result<Vec<_>, _>>()
             {
                 Ok(vec) => {
-                    let vec_as_json = serde_json::to_value(&vec).map_err(|e| {
-                        InternalError::encryption_error(
-                            "Failed to serialize outcome",
-                            Some(e.to_string().as_str()),
-                        )
-                    })?;
-                    StatefulActor::update(vec_as_json, state).await;
-
                     tracing::info!(
                         "Refreshed {} connections with outcome: {:?}",
                         vec.len(),
@@ -118,15 +106,5 @@ impl Handler<Refresh> for RefreshActor {
                 Err(err) => Err(InternalError::io_err(err.to_string().as_str(), None)),
             }
         })
-    }
-}
-
-impl Handler<Query> for RefreshActor {
-    type Result = ResponseFuture<StatefulActor>;
-
-    fn handle(&mut self, _: Query, _: &mut Self::Context) -> Self::Result {
-        let state = self.state.clone();
-
-        Box::pin(async move { state.lock().await.clone() })
     }
 }
