@@ -91,7 +91,7 @@ impl Handler<Trigger> for TriggerActor {
             let template = DefaultTemplate::default();
 
             let ask = || async {
-                let conn_id = match &msg.connection().oauth {
+                let conn_oauth_id = match &msg.connection().oauth {
                     Some(OAuth::Enabled {
                         connection_oauth_definition_id: conn_oauth_definition_id,
                         ..
@@ -104,7 +104,7 @@ impl Handler<Trigger> for TriggerActor {
 
                 let conn_oauth_definition = oauths
                     .get_one(doc! {
-                        "_id": conn_id.to_string(),
+                        "_id": conn_oauth_id.to_string(),
                     })
                     .await
                     .map_err(|e| {
@@ -115,7 +115,8 @@ impl Handler<Trigger> for TriggerActor {
                         )
                     })?
                     .ok_or(ApplicationError::not_found(
-                        format!("Connection oauth definition not found: {}", conn_id).as_str(),
+                        format!("Connection oauth definition not found: {}", conn_oauth_id)
+                            .as_str(),
                         None,
                     ))?;
 
@@ -203,7 +204,6 @@ impl Handler<Trigger> for TriggerActor {
                     })?;
 
                 let oauth_secret = secret.from_refresh(decoded, None, None, json);
-
                 let secret = secrets_client
                     .create_secret(
                         msg.connection().clone().ownership.client_id,
@@ -216,7 +216,7 @@ impl Handler<Trigger> for TriggerActor {
                     })?;
 
                 let set = OAuth::Enabled {
-                    connection_oauth_definition_id: *conn_id,
+                    connection_oauth_definition_id: *conn_oauth_id,
                     expires_at: Some(
                         (chrono::Utc::now() + Duration::seconds(oauth_secret.expires_in as i64))
                             .timestamp(),
@@ -248,7 +248,7 @@ impl Handler<Trigger> for TriggerActor {
                     msg.connection().id
                 );
 
-                Ok::<Id, Error>(*conn_id)
+                Ok::<Id, Error>(msg.connection().id)
             };
 
             match ask().await {
