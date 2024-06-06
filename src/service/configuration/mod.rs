@@ -11,9 +11,9 @@ use std::fmt::Debug;
 
 #[derive(Clone, Envconfig)]
 pub struct OAuthConfig {
-    #[envconfig(env = "REFRESH_BEFORE_IN_MINUTES", default = "10")]
+    #[envconfig(from = "REFRESH_BEFORE_IN_MINUTES", default = "10")]
     refresh_before: i64,
-    #[envconfig(env = "SLEEP_TIMER_IN_SECONDS", default = "20")]
+    #[envconfig(from = "SLEEP_TIMER_IN_SECONDS", default = "20")]
     sleep_timer: u64,
     #[envconfig(nested = true)]
     database: DatabaseConfig,
@@ -45,11 +45,6 @@ impl OAuthConfig {
 
     pub fn secrets_config(&self) -> &SecretsConfig {
         &self.secrets_config
-    }
-
-    pub fn load() -> Result<Self, envconfig::Error> {
-        // dotenv().ok() is already called in the main.rs
-        OAuthConfig::init_from_env()
     }
 }
 
@@ -146,16 +141,13 @@ impl ServerConfig {
     pub fn admin_secret(&self) -> &str {
         &self.admin_secret
     }
-
-    pub fn load() -> Result<Self, envconfig::Error> {
-        // dotenv().ok() is already called in the main.rs
-        ServerConfig::init_from_env()
-    }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Envconfig)]
 pub struct Configuration {
+    #[envconfig(nested = true)]
     oauth: OAuthConfig,
+    #[envconfig(nested = true)]
     server: ServerConfig,
 }
 
@@ -186,10 +178,6 @@ impl Debug for Configuration {
 }
 
 impl Configuration {
-    pub fn new(oauth: OAuthConfig, server: ServerConfig) -> Self {
-        Self { oauth, server }
-    }
-
     pub fn oauth(&self) -> &OAuthConfig {
         &self.oauth
     }
