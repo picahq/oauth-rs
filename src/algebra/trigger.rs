@@ -57,6 +57,16 @@ impl Actor for TriggerActor {
             ctx.address()
         );
     }
+
+    fn stopped(&mut self, ctx: &mut Self::Context) {
+        let request_id = self.request_id.map(|id| id.to_string());
+
+        tracing::info!(
+            request_id = request_id.as_deref(),
+            "TriggerActor stopped with address: {:?}",
+            ctx.address()
+        );
+    }
 }
 
 impl Supervised for TriggerActor {}
