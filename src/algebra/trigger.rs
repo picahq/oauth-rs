@@ -90,7 +90,7 @@ impl Handler<Trigger> for TriggerActor {
     #[tracing::instrument(
         name = "TriggerActor handle", skip(self, msg), fields(request_id = self.request_id.map(|id| id.to_string()).as_deref())
     )]
-    fn handle(&mut self, msg: Trigger, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: Trigger, _ctx: &mut Self::Context) -> Self::Result {
         let oauths = self.oauths.clone();
         let secrets_client = self.secrets_client.clone();
         let connections = self.connections.clone();
