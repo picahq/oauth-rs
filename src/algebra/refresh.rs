@@ -41,14 +41,18 @@ impl Actor for RefreshActor {
     fn started(&mut self, ctx: &mut Self::Context) {
         tracing::info!("RefreshActor started with id {:?}", ctx.address());
     }
+
+    fn stopped(&mut self, ctx: &mut Self::Context) {
+        tracing::info!("RefreshActor stopped with id {:?}", ctx.address());
+    }
 }
 
 impl Supervised for RefreshActor {}
 
 impl Handler<Refresh> for RefreshActor {
-    type Result = ResponseFuture<Result<Unit, Error>>;
+    type Result = ResponseActFuture<Self, Result<Unit, Error>>;
 
-    fn handle(&mut self, msg: Refresh, _: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: Refresh, _ctx: &mut Self::Context) -> Self::Result {
         let refresh_before = Utc::now();
         let refresh_after = refresh_before + Duration::minutes(msg.refresh_before_in_minutes());
         tracing::info!(
@@ -62,7 +66,7 @@ impl Handler<Refresh> for RefreshActor {
         let connections_store = self.connections.clone();
         let oauths_store = self.oauths.clone();
 
-        Box::pin(async move {
+        let future = async move {
             tracing::info!("Searching for connections to refresh");
             let connections = connections_store
                 .get_by(&refresh_before, &refresh_after)
@@ -105,6 +109,16 @@ impl Handler<Refresh> for RefreshActor {
                 }
                 Err(err) => Err(InternalError::io_err(err.to_string().as_str(), None)),
             }
-        })
+        }
+        .into_actor(self)
+        .map(|res, _act, ctx| match res {
+            Ok(_) => {
+                ctx.stop();
+                Ok(())
+            }
+            Err(e) => Err(e),
+        });
+
+        Box::pin(future)
     }
 }

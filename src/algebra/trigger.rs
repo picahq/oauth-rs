@@ -57,6 +57,16 @@ impl Actor for TriggerActor {
             ctx.address()
         );
     }
+
+    fn stopped(&mut self, ctx: &mut Self::Context) {
+        let request_id = self.request_id.map(|id| id.to_string());
+
+        tracing::info!(
+            request_id = request_id.as_deref(),
+            "TriggerActor stopped with address: {:?}",
+            ctx.address()
+        );
+    }
 }
 
 impl Supervised for TriggerActor {}
@@ -80,7 +90,7 @@ impl Handler<Trigger> for TriggerActor {
     #[tracing::instrument(
         name = "TriggerActor handle", skip(self, msg), fields(request_id = self.request_id.map(|id| id.to_string()).as_deref())
     )]
-    fn handle(&mut self, msg: Trigger, _: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: Trigger, ctx: &mut Self::Context) -> Self::Result {
         let oauths = self.oauths.clone();
         let secrets_client = self.secrets_client.clone();
         let connections = self.connections.clone();
