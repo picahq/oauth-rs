@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use fake::{Fake, Faker};
 use integrationos_domain::{
     access_key_data::AccessKeyData, access_key_prefix::AccessKeyPrefix,
@@ -25,7 +25,9 @@ static IV: Lazy<[u8; 16]> = Lazy::new(|| rand::thread_rng().gen::<[u8; 16]>());
 pub static EPOCH: Lazy<DateTime<Utc>> = Lazy::new(|| {
     TimeZone::from_utc_datetime(
         &Utc,
-        &NaiveDateTime::from_timestamp_opt(0, 0).expect("Failed to create timestamp"),
+        &DateTime::from_timestamp(0, 0)
+            .expect("Failed to create timestamp")
+            .naive_utc(),
     )
 });
 pub static ID: Lazy<Id> = Lazy::new(|| Id::now(IdPrefix::ConnectionModelDefinition));

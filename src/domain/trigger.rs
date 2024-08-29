@@ -1,9 +1,6 @@
-use crate::domain::Outcome;
-use actix::prelude::*;
 use integrationos_domain::Connection;
 
-#[derive(Message, Debug, Clone, Eq, PartialEq)]
-#[rtype(result = "Outcome")]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Trigger {
     connection: Connection,
 }

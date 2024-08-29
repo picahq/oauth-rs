@@ -23,7 +23,6 @@ pub const INTEGRATION_PREFIX: &str = "/integration";
 pub struct Application {
     port: u16,
     server: Server,
-    task: Task,
 }
 
 impl Application {
@@ -45,12 +44,22 @@ impl Application {
 
         let sleep_timer = Duration::from_secs(configuration.oauth().sleep_timer());
         let refresh_before = configuration.oauth().refresh_before();
-        let refresh_actor = state.refresh_actor().clone();
-        let task = Box::pin(async move {
-            loop {
-                let message = Refresh::new(refresh_before);
-                let res = refresh_actor.send(message).await;
 
+        let connections = state.connections().clone();
+        let oauths = state.oauths().clone();
+        let secrets = state.secrets().clone();
+        let client = state.client().clone();
+
+        tokio::spawn(async move {
+            loop {
+                let res = refresh(
+                    Refresh::new(refresh_before),
+                    connections.clone(),
+                    secrets.clone(),
+                    oauths.clone(),
+                    client.clone(),
+                )
+                .await;
                 if let Err(e) = res {
                     tracing::warn!("Failed to send refresh message: {:?}", e);
                 }
@@ -62,29 +71,25 @@ impl Application {
 
         let server = run(listener, configuration.clone(), state).await?;
 
-        Ok(Self { port, server, task })
+        Ok(Self { port, server })
     }
 
     pub fn port(&self) -> u16 {
         self.port
     }
 
-    pub fn handler(self) -> (Server, Task) {
-        (self.server, self.task)
+    pub fn handler(self) -> Server {
+        self.server
     }
 
     pub async fn spawn(self) -> Result<(), anyhow::Error> {
-        let (server, task) = self.handler();
-        let task = tokio::spawn(task);
+        let server = self.handler();
         let http = tokio::spawn(server);
 
         tokio::select! {
             res = http => {
                 res.context("Failed to spawn http application.")?.context("Failed to spawn http application.")
             },
-            res = task => {
-                res.context("Failed to spawn background task.")
-            }
         }
     }
 }

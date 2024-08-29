@@ -4,8 +4,6 @@ mod http;
 pub use configuration::*;
 pub use http::*;
 
-use crate::algebra::RefreshActor;
-use actix::{Addr, Supervisor};
 use actix_web::http::header::HeaderValue;
 use integrationos_domain::{
     algebra::MongoStore, client::secrets_client::SecretsClient,
@@ -27,7 +25,6 @@ pub struct AppState {
     connections: Arc<MongoStore<Connection>>,
     oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
     event_access: Arc<MongoStore<EventAccess>>,
-    refresh_actor: Addr<RefreshActor>,
 }
 
 impl AppState {
@@ -76,14 +73,6 @@ impl AppState {
         let secrets = Arc::new(secrets);
         let event_access = Arc::new(event_access);
 
-        let actor = RefreshActor::new(
-            oauths.clone(),
-            connections.clone(),
-            secrets.clone(),
-            client.clone(),
-        );
-        let refresh_actor = Supervisor::start(move |_| actor);
-
         Ok(AppState {
             configuration: config,
             cache,
@@ -92,7 +81,6 @@ impl AppState {
             client,
             oauths,
             secrets,
-            refresh_actor,
         })
     }
 
@@ -122,9 +110,5 @@ impl AppState {
 
     pub fn secrets(&self) -> &Arc<SecretsClient> {
         &self.secrets
-    }
-
-    pub fn refresh_actor(&self) -> &Addr<RefreshActor> {
-        &self.refresh_actor
     }
 }

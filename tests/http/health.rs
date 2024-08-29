@@ -1,7 +1,7 @@
 use crate::suite::TestApp;
 use std::collections::HashMap;
 
-#[actix::test]
+#[actix_web::test]
 async fn health_check_works() {
     // Arrange
     let application = TestApp::spawn(HashMap::new()).await;

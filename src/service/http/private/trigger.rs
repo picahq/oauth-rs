@@ -1,9 +1,9 @@
 use crate::{
-    algebra::{StorageExt, TriggerActor},
-    domain::{Outcome, Trigger},
+    algebra::StorageExt,
+    domain::Trigger,
     service::{AppState, ResponseType, ServerResponse},
+    trigger,
 };
-use actix::Actor;
 use actix_web::{
     post,
     web::{Data, Path},
@@ -14,15 +14,10 @@ use integrationos_domain::{
 };
 use reqwest::StatusCode;
 use serde_json::json;
-use tracing_actix_web::RequestId;
 
-#[tracing::instrument(name = "Trigger refresh", skip(state, request_id))]
+#[tracing::instrument(name = "Trigger refresh", skip(state))]
 #[post("/trigger/{id}")]
-pub async fn trigger_refresh(
-    request_id: RequestId,
-    state: Data<AppState>,
-    id: Path<Id>,
-) -> Result<HttpResponse, Error> {
+pub async fn trigger_refresh(state: Data<AppState>, id: Path<Id>) -> Result<HttpResponse, Error> {
     let id = id.into_inner();
     let connection = state
         .connections()
@@ -35,36 +30,24 @@ pub async fn trigger_refresh(
 
     tracing::info!("Triggering refresh for connection {}", connection.id);
 
-    let actor = TriggerActor::new(
+    let outcome = trigger(
+        Trigger::new(connection),
+        state.secrets().clone(),
         state.connections().clone(),
         state.oauths().clone(),
-        state.secrets().clone(),
         state.client().clone(),
-        Some(request_id),
     )
-    .start();
-
-    let id = connection.id;
-    let trigger = Trigger::new(connection);
-
-    let outcome = actor
-        .send(trigger)
-        .await
-        .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
+    .await
+    .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
 
     let json = json!({
         "id": id,
         "outcome": outcome,
     });
 
-    let status: StatusCode = match outcome {
-        Outcome::Success { .. } => StatusCode::OK,
-        Outcome::Failure { error, .. } => (&error).into(),
-    };
-
     Ok(ServerResponse::from(
         ResponseType::Trigger,
         json,
-        status.into(),
+        StatusCode::OK.as_u16(),
     ))
 }

@@ -6,7 +6,7 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-#[actix::test]
+#[actix_web::test]
 async fn returns_401_for_missing_headers() {
     // Arrange
     let application = TestApp::spawn(HashMap::new()).await;
@@ -17,7 +17,7 @@ async fn returns_401_for_missing_headers() {
     assert_eq!(401, response.status().as_u16());
 }
 
-#[actix::test]
+#[actix_web::test]
 async fn returns_404_for_invalid_prefix_id() {
     // Arrange
     let application = TestApp::spawn(HashMap::new()).await;
@@ -57,7 +57,7 @@ async fn returns_404_for_invalid_prefix_id() {
     );
 }
 
-#[actix::test]
+#[actix_web::test]
 async fn returns_401_for_non_existent_event_access() {
     // Arrange
     let application = TestApp::spawn(HashMap::new()).await;
@@ -97,7 +97,7 @@ async fn returns_401_for_non_existent_event_access() {
     );
 }
 
-#[actix::test]
+#[actix_web::test]
 #[flaky]
 async fn returns_404_inexistent_event() {
     // Arrange
