@@ -79,11 +79,7 @@ pub async fn refresh(
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(vec) => {
-            tracing::info!(
-                "Refreshed {} connections with outcome: {:?}",
-                vec.len(),
-                vec
-            );
+            tracing::info!("Refreshed {} connections: {:?}", vec.len(), vec);
 
             Ok(())
         }
