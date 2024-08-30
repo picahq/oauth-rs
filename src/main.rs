@@ -1,14 +1,14 @@
 use dotenvy::dotenv;
 use envconfig::Envconfig;
 use integrationos_domain::telemetry::{get_subscriber, init_subscriber};
-use oauth_api::{refresh, AppState, Refresh, RefreshConfig};
+use oauth_refresh::{refresh, AppState, Refresh, RefreshConfig};
 use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
-    let suscriber = get_subscriber("oauth-api".into(), "info".into(), std::io::stdout);
+    let suscriber = get_subscriber("oauth-refresh".into(), "info".into(), std::io::stdout);
     init_subscriber(suscriber);
 
     let configuration = RefreshConfig::init_from_env()?;
