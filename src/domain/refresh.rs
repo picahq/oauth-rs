@@ -1,9 +1,7 @@
-use crate::domain::Unit;
-use actix::prelude::*;
-use integrationos_domain::error::IntegrationOSError as Error;
+use serde::Serialize;
+use serde_json::Value;
 
-#[derive(Message, Debug, Clone)]
-#[rtype(result = "Result<Unit, Error>")]
+#[derive(Debug, Clone)]
 pub struct Refresh {
     refresh_before_in_minutes: i64,
 }
@@ -17,5 +15,21 @@ impl Refresh {
 
     pub fn refresh_before_in_minutes(&self) -> i64 {
         self.refresh_before_in_minutes
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Refreshed {
+    message: String,
+    metadata: Value,
+}
+
+impl Refreshed {
+    pub fn new(message: &str, metadata: Value) -> Self {
+        Self {
+            message: message.to_string(),
+            metadata,
+        }
     }
 }

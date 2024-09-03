@@ -7,7 +7,7 @@ use oauth_api::{Application, Configuration};
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
-    let suscriber = get_subscriber("oauth_api".into(), "info".into(), std::io::stdout);
+    let suscriber = get_subscriber("oauth-api".into(), "info".into(), std::io::stdout);
     init_subscriber(suscriber);
 
     let configuration = Configuration::init_from_env()?;
