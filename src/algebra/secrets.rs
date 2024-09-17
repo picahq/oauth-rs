@@ -57,7 +57,8 @@ impl SecretsClient {
             .event
             .get_one(doc! {
                 "ownership.buildableId": buildable_id,
-                "key": key
+                "key": key,
+                "deleted": false
             })
             .await?
             .ok_or(InternalError::key_not_found("Event access not found", None))?;
@@ -75,7 +76,9 @@ impl SecretsClient {
                 InternalError::io_err(&format!("Failed to send request: {err}"), None)
             })?;
 
-        let secret: Secret = response.json().await.map_err(|err| {
+        let secret = response.json().await;
+
+        let secret: Secret = secret.map_err(|err| {
             InternalError::serialize_error(&format!("Failed to deserialize response: {err}"), None)
         })?;
 
