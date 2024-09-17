@@ -1,22 +1,44 @@
 use dotenvy::dotenv;
 use envconfig::Envconfig;
 use integrationos_domain::telemetry::{get_subscriber, init_subscriber};
-use oauth_api::{Application, Configuration};
+use oauth_api::{refresh, AppState, Refresh, RefreshConfig};
+use std::time::Duration;
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
     let suscriber = get_subscriber("oauth-api".into(), "info".into(), std::io::stdout);
     init_subscriber(suscriber);
 
-    let configuration = Configuration::init_from_env()?;
+    let configuration = RefreshConfig::init_from_env()?;
 
-    let address = configuration.server().app_url().to_string();
-    let application = Application::start(&configuration).await?;
+    tracing::info!(
+        "Starting application with configuration: {}{:#?}{}",
+        "\n",
+        &configuration,
+        "\n"
+    );
+    let state = AppState::try_from(configuration.clone()).await?;
 
-    tracing::info!("Starting server at {}", &address);
-    application.spawn().await?;
+    let sleep_timer = Duration::from_secs(configuration.sleep_timer());
+    let refresh_before = configuration.refresh_before();
 
-    Ok(())
+    loop {
+        let res = refresh(
+            Refresh::new(refresh_before),
+            state.connections().clone(),
+            state.secrets().clone(),
+            state.oauths().clone(),
+            state.client().clone(),
+            state.metrics().clone(),
+        )
+        .await;
+        if let Err(e) = res {
+            tracing::warn!("Failed to send refresh message: {:?}", e);
+        }
+
+        tracing::info!("Sleeping for {} seconds", sleep_timer.as_secs());
+        tokio::time::sleep(sleep_timer).await;
+    }
 }

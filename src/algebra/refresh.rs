@@ -1,7 +1,7 @@
 use crate::{
     algebra::StorageExt,
     domain::{Refresh, Trigger, Unit},
-    ParameterExt, Refreshed,
+    Metrics, ParameterExt, Refreshed,
 };
 use chrono::{Duration, Utc};
 use integrationos_domain::{
@@ -39,6 +39,7 @@ pub async fn refresh(
     secrets: Arc<SecretsClient>,
     oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
     client: Client,
+    metrics: Arc<Metrics>,
 ) -> Result<Unit, Error> {
     let refresh_before = Utc::now();
     let refresh_after = refresh_before + Duration::minutes(msg.refresh_before_in_minutes());
@@ -73,18 +74,27 @@ pub async fn refresh(
         requests.push(result);
     }
 
-    match futures::future::join_all(requests)
-        .await
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-    {
-        Ok(vec) => {
-            tracing::info!("Refreshed {} connections: {:?}", vec.len(), vec);
+    let results = futures::future::join_all(requests).await;
 
-            Ok(())
-        }
-        Err(err) => Err(InternalError::io_err(err.to_string().as_str(), None)),
+    let (successes, failures): (Vec<_>, Vec<_>) =
+        results.into_iter().partition(|result| result.is_ok());
+
+    if !successes.is_empty() {
+        tracing::info!("Refreshed {} connections: {:?}", successes.len(), successes);
     }
+
+    if !failures.is_empty() {
+        tracing::info!(
+            "Failed to refresh {} connections: {:?}",
+            failures.len(),
+            failures
+        );
+    }
+
+    metrics.add_refreshed(successes.len() as u64);
+    metrics.add_failed_to_refresh(failures.len() as u64);
+
+    Ok(())
 }
 
 pub async fn trigger(

@@ -23,12 +23,12 @@ pub struct RefreshConfig {
 
 impl Debug for RefreshConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "REFRESH_BEFORE_IN_MINUTES: {}", self.refresh_before)?;
-        writeln!(f, "SLEEP_TIMER_IN_SECONDS: {}", self.sleep_timer)?;
-        writeln!(f, "TIMEOUT: {}", self.timeout)?;
-        writeln!(f, "ENVIRONMENT: {}", self.environment)?;
-        write!(f, "{}", self.database)?;
-        write!(f, "{}", self.secrets_config)
+        f.debug_struct("OAuthConfig")
+            .field("refresh_before", &self.refresh_before)
+            .field("sleep_timer", &self.sleep_timer)
+            .field("timeout", &self.timeout)
+            .field("environment", &self.environment)
+            .finish()
     }
 }
 
