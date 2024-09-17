@@ -2,7 +2,6 @@ use envconfig::Envconfig;
 use integrationos_domain::{
     database::DatabaseConfig, environment::Environment, secrets::SecretsConfig,
 };
-use std::collections::HashMap;
 use std::fmt::Debug;
 
 #[derive(Clone, Envconfig)]
@@ -19,6 +18,12 @@ pub struct RefreshConfig {
     timeout: u64,
     #[envconfig(from = "ENVIRONMENT", default = "test")]
     environment: Environment,
+    #[envconfig(from = "GET_SECRET_PATH", default = "http://localhost:3005/v1/secrets")]
+    get_secret: String,
+    #[envconfig(from = "CREATE_SECRET_PATH", default = "http://localhost:3005/v1/secrets")]
+    create_secret: String,
+    #[envconfig(from = "MAX_RETRIES", default = "3")]
+    max_retries: u32,
 }
 
 impl Debug for RefreshConfig {
@@ -27,6 +32,9 @@ impl Debug for RefreshConfig {
         writeln!(f, "SLEEP_TIMER_IN_SECONDS: {}", self.sleep_timer)?;
         writeln!(f, "TIMEOUT: {}", self.timeout)?;
         writeln!(f, "ENVIRONMENT: {}", self.environment)?;
+        writeln!(f, "GET_SECRET_PATH: {}", self.get_secret)?;
+        writeln!(f, "CREATE_SECRET_PATH: {}", self.create_secret)?;
+        writeln!(f, "MAX_RETRIES: {}", self.max_retries)?;
         write!(f, "{}", self.database)?;
         write!(f, "{}", self.secrets_config)
     }
@@ -56,43 +64,16 @@ impl RefreshConfig {
     pub fn environment(&self) -> Environment {
         self.environment
     }
-}
 
-impl From<HashMap<&str, &str>> for RefreshConfig {
-    fn from(value: HashMap<&str, &str>) -> Self {
-        let refresh_before = value
-            .get("REFRESH_BEFORE_IN_MINUTES")
-            .and_then(|value| value.parse().ok())
-            .unwrap_or(10);
+    pub fn get_secret(&self) -> &str {
+        &self.get_secret
+    }
 
-        let sleep_timer = value
-            .get("SLEEP_TIMER_IN_SECONDS")
-            .and_then(|value| value.parse().ok())
-            .unwrap_or(20);
+    pub fn create_secret(&self) -> &str {
+        &self.create_secret
+    }
 
-        let owned = value
-            .iter()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
-            .collect();
-        let database = DatabaseConfig::init_from_hashmap(&owned).unwrap_or_default();
-        let secrets_config = SecretsConfig::init_from_hashmap(&owned).unwrap_or_default();
-        let timeout = value
-            .get("TIMEOUT")
-            .and_then(|value| value.parse().ok())
-            .unwrap_or(30);
-        let environment = value
-            .get("ENVIRONMENT")
-            .unwrap_or(&"test")
-            .parse()
-            .expect("Failed to parse environment");
-
-        Self {
-            refresh_before,
-            environment,
-            sleep_timer,
-            timeout,
-            database,
-            secrets_config,
-        }
+    pub fn max_retries(&self) -> u32 {
+        self.max_retries
     }
 }
