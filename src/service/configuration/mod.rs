@@ -20,7 +20,10 @@ pub struct RefreshConfig {
     environment: Environment,
     #[envconfig(from = "GET_SECRET_PATH", default = "http://localhost:3005/v1/secrets")]
     get_secret: String,
-    #[envconfig(from = "CREATE_SECRET_PATH", default = "http://localhost:3005/v1/secrets")]
+    #[envconfig(
+        from = "CREATE_SECRET_PATH",
+        default = "http://localhost:3005/v1/secrets"
+    )]
     create_secret: String,
     #[envconfig(from = "MAX_RETRIES", default = "3")]
     max_retries: u32,
