@@ -79,12 +79,17 @@ pub async fn refresh(
     let (successes, failures): (Vec<_>, Vec<_>) =
         results.into_iter().partition(|result| result.is_ok());
 
-    tracing::info!("Refreshed {} connections: {:?}", successes.len(), successes);
-    tracing::info!(
-        "Failed to refresh {} connections: {:?}",
-        failures.len(),
-        failures
-    );
+    if !successes.is_empty() {
+        tracing::info!("Refreshed {} connections: {:?}", successes.len(), successes);
+    }
+
+    if !failures.is_empty() {
+        tracing::info!(
+            "Failed to refresh {} connections: {:?}",
+            failures.len(),
+            failures
+        );
+    }
 
     metrics.add_refreshed(successes.len() as u64);
     metrics.add_failed_to_refresh(failures.len() as u64);
