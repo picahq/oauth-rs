@@ -32,7 +32,7 @@ impl AppState {
         let retry_policy =
             ExponentialBackoff::builder().build_with_max_retries(config.max_retries());
         let client = Client::builder()
-            .timeout(Duration::from_millis(config.timeout()))
+            .timeout(Duration::from_secs(config.timeout()))
             .build()
             .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
         let client = ClientBuilder::new(client)

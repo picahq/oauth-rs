@@ -79,6 +79,7 @@ impl SecretsClient {
         let secret = response.json().await;
 
         let secret: Secret = secret.map_err(|err| {
+            warn!("Failed to deserialize response: {err}");
             InternalError::serialize_error(&format!("Failed to deserialize response: {err}"), None)
         })?;
 
@@ -126,6 +127,7 @@ impl SecretsClient {
             })?;
 
         response.json().await.map_err(|err| {
+            warn!("Failed to deserialize response: {err}");
             InternalError::serialize_error(&format!("Failed to deserialize response: {err}"), None)
         })
     }
