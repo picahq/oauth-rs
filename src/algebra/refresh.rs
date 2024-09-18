@@ -1,21 +1,19 @@
 use crate::{
     algebra::StorageExt,
     domain::{Refresh, Trigger, Unit},
-    Metrics, ParameterExt, Refreshed,
+    Metrics, ParameterExt, Refreshed, SecretsClient,
 };
 use chrono::{Duration, Utc};
 use integrationos_domain::{
     algebra::MongoStore,
     api_model_config::ContentType,
-    client::secrets_client::SecretsClient,
     connection_oauth_definition::{Computation, ConnectionOAuthDefinition, OAuthResponse},
     error::IntegrationOSError as Error,
-    get_secret_request::GetSecretRequest,
     oauth_secret::OAuthSecret,
     ApplicationError, Connection, DefaultTemplate, InternalError, OAuth, TemplateExt,
 };
 use mongodb::bson::{self, doc};
-use reqwest::Client;
+use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 use std::sync::Arc;
 use tracing::warn;
@@ -38,7 +36,7 @@ pub async fn refresh(
     connections_store: Arc<MongoStore<Connection>>,
     secrets: Arc<SecretsClient>,
     oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
-    client: Client,
+    client: ClientWithMiddleware,
     metrics: Arc<Metrics>,
 ) -> Result<Unit, Error> {
     let refresh_before = Utc::now();
@@ -102,7 +100,7 @@ pub async fn trigger(
     secrets: Arc<SecretsClient>,
     connections: Arc<MongoStore<Connection>>,
     oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
-    client: Client,
+    client: ClientWithMiddleware,
 ) -> Result<Refreshed, Error> {
     let template = DefaultTemplate::default();
 
@@ -135,15 +133,12 @@ pub async fn trigger(
         ))?;
 
     let secret: OAuthSecret = secrets
-        .get_secret::<OAuthSecret>(&GetSecretRequest {
-            id: msg.connection().secrets_service_id.clone(),
-            buildable_id: msg.connection().ownership.client_id.clone(),
-        })
-        .await
-        .map_err(|e| {
-            warn!("Failed to get secret: {}", e);
-            ApplicationError::not_found(format!("Failed to get secret: {}", e).as_str(), None)
-        })?;
+        .get_secret::<OAuthSecret>(
+            &msg.connection().secrets_service_id,
+            &msg.connection().ownership.client_id,
+            &msg.connection().environment,
+        )
+        .await?;
 
     let compute_payload = serde_json::to_value(&secret).map_err(|e| {
         warn!("Failed to serialize secret: {}", e);
@@ -175,6 +170,7 @@ pub async fn trigger(
     let request = client
         .post(conn_oauth_definition.configuration.refresh.uri())
         .headers(headers.unwrap_or_default());
+
     let request = match conn_oauth_definition.configuration.refresh.content {
         Some(ContentType::Json) => request.json(&body).query(&query),
         Some(ContentType::Form) => request.form(&body).query(&query),
@@ -218,7 +214,8 @@ pub async fn trigger(
     let secret = secrets
         .create_secret(
             msg.connection().clone().ownership.client_id,
-            &oauth_secret.as_json(),
+            oauth_secret.as_json(),
+            msg.connection().environment,
         )
         .await
         .map_err(|e| {
@@ -240,7 +237,7 @@ pub async fn trigger(
                 warn!("Failed to serialize oauth: {}", e);
                 InternalError::serialize_error("Failed to serialize oauth", None)
             })?,
-            "secretsServiceId": secret.id,
+            "secretsServiceId": secret.id(),
         }
     };
 

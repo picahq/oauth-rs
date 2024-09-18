@@ -2,22 +2,24 @@ mod configuration;
 
 pub use configuration::*;
 
+use crate::{Metrics, SecretsClient};
 use integrationos_domain::{
-    algebra::MongoStore, client::secrets_client::SecretsClient,
-    connection_oauth_definition::ConnectionOAuthDefinition, error::IntegrationOSError as Error,
-    event_access::EventAccess, Connection, InternalError, Store,
+    algebra::MongoStore, connection_oauth_definition::ConnectionOAuthDefinition,
+    error::IntegrationOSError as Error, event_access::EventAccess, Connection, InternalError,
+    Store,
 };
 use mongodb::options::FindOptions;
 use reqwest::Client;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_tracing::TracingMiddleware;
 use serde_json::Value;
 use std::{sync::Arc, time::Duration};
 use tokio::time::timeout;
 
-use crate::Metrics;
-
 #[derive(Clone, Debug)]
 pub struct AppState {
-    client: Client,
+    client: ClientWithMiddleware,
     secrets: Arc<SecretsClient>,
     connections: Arc<MongoStore<Connection>>,
     oauths: Arc<MongoStore<ConnectionOAuthDefinition>>,
@@ -27,10 +29,16 @@ pub struct AppState {
 
 impl AppState {
     pub async fn try_from(config: RefreshConfig) -> Result<Self, Error> {
+        let retry_policy =
+            ExponentialBackoff::builder().build_with_max_retries(config.max_retries());
         let client = Client::builder()
-            .timeout(Duration::from_millis(config.timeout()))
+            .timeout(Duration::from_secs(config.timeout()))
             .build()
             .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
+        let client = ClientBuilder::new(client)
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .with(TracingMiddleware::default())
+            .build();
         let mongo_client = mongodb::Client::with_uri_str(&config.database().control_db_url)
             .await
             .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
@@ -58,7 +66,6 @@ impl AppState {
         .ok();
 
         let database = mongo_client.database(config.database().control_db_name.as_ref());
-        let secrets = SecretsClient::new(config.secrets_config())?;
         let oauths = MongoStore::<ConnectionOAuthDefinition>::new(
             &database,
             &Store::ConnectionOAuthDefinitions,
@@ -69,9 +76,10 @@ impl AppState {
 
         let oauths = Arc::new(oauths);
         let connections = Arc::new(connections);
-        let secrets = Arc::new(secrets);
         let event_access = Arc::new(event_access);
         let metrics = Arc::new(Metrics::new()?);
+        let secrets = SecretsClient::new(&config, &event_access, client.clone());
+        let secrets = Arc::new(secrets);
 
         Ok(AppState {
             event_access,
@@ -83,7 +91,7 @@ impl AppState {
         })
     }
 
-    pub fn client(&self) -> &Client {
+    pub fn client(&self) -> &ClientWithMiddleware {
         &self.client
     }
 

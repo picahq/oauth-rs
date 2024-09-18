@@ -14,14 +14,20 @@ dotenvy = "0.15.7"
 envconfig = "0.10.0"
 futures = "0.3.30"
 handlebars = "5.1.1"
-integrationos-domain = { version = "4.1.6", features = ["dummy"] }
+integrationos-domain = { version = "7.0.0", features = ["dummy"] }
 metrics = "0.21.1"
 metrics-exporter-prometheus = "0.12.1"
 mongodb = "2.8.0"
 reqwest = { version = "0.12.3", features = [
     "json",
     "rustls-tls",
-], default-features = false }
+] }
+reqwest-middleware = { version = "0.3.3", features = [
+    "json",
+    "rustls-tls",
+] }
+reqwest-retry = "0.6.1"
+reqwest-tracing = "0.5.3"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
 tokio = { version = "1.35.1", features = ["macros", "rt-multi-thread"] }
