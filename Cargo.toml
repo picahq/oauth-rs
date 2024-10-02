@@ -14,7 +14,7 @@ dotenvy = "0.15.7"
 envconfig = "0.10.0"
 futures = "0.3.30"
 handlebars = "5.1.1"
-integrationos-domain = { version = "7.0.0", features = ["dummy"] }
+integrationos-domain = { version = "8.0.0", features = ["dummy"] }
 metrics = "0.21.1"
 metrics-exporter-prometheus = "0.12.1"
 mongodb = "2.8.0"
