@@ -12,7 +12,7 @@ use tracing::warn;
 
 const PRODUCTION_KEY: &str = "event_access::custom::live::default::event-inc::internal-ui";
 const TEST_KEY: &str = "event_access::custom::test::default::event-inc::internal-ui";
-const INTEGRATIONOS_SECRET_HEADER: &str = "X-INTEGRATIONOS-SECRET";
+const PICA_SECRET_HEADER: &str = "X-PICA-SECRET";
 
 #[derive(Debug, Clone)]
 pub struct SecretsClient {
@@ -69,7 +69,7 @@ impl SecretsClient {
         let response = self
             .client
             .get(&uri)
-            .header(INTEGRATIONOS_SECRET_HEADER, access_key)
+            .header(PICA_SECRET_HEADER, access_key)
             .send()
             .await
             .map_err(|err| {
@@ -119,7 +119,7 @@ impl SecretsClient {
             .client
             .post(&self.create)
             .json(&payload)
-            .header(INTEGRATIONOS_SECRET_HEADER, access_key)
+            .header(PICA_SECRET_HEADER, access_key)
             .send()
             .await
             .map_err(|err| {
