@@ -1,4 +1,4 @@
-use integrationos_domain::Connection;
+use osentities::Connection;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Trigger {

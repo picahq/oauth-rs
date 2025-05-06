@@ -4,15 +4,15 @@ use crate::{
     Metrics, ParameterExt, Refreshed, SecretsClient,
 };
 use chrono::{Duration, Utc};
-use integrationos_domain::{
+use mongodb::bson::{self, doc};
+use osentities::{
     algebra::MongoStore,
     api_model_config::ContentType,
     connection_oauth_definition::{Computation, ConnectionOAuthDefinition, OAuthResponse},
-    error::IntegrationOSError as Error,
+    error::PicaError as Error,
     oauth_secret::OAuthSecret,
     ApplicationError, Connection, DefaultTemplate, InternalError, OAuth, TemplateExt,
 };
-use mongodb::bson::{self, doc};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 use std::sync::Arc;

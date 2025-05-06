@@ -3,12 +3,11 @@ mod configuration;
 pub use configuration::*;
 
 use crate::{Metrics, SecretsClient};
-use integrationos_domain::{
+use mongodb::{bson::doc, options::FindOptions};
+use osentities::{
     algebra::MongoStore, connection_oauth_definition::ConnectionOAuthDefinition,
-    error::IntegrationOSError as Error, event_access::EventAccess, Connection, InternalError,
-    Store,
+    error::PicaError as Error, event_access::EventAccess, Connection, InternalError, Store,
 };
-use mongodb::options::FindOptions;
 use reqwest::Client;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -43,17 +42,20 @@ impl AppState {
             .await
             .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
 
+        let db = mongo_client.database(&config.database().control_db_name);
+
         timeout(Duration::from_secs(config.timeout()), async {
             mongo_client
                 .database(&config.database().event_db_name)
                 .collection::<Value>("system-stats")
                 .find(
-                    None,
+                    doc!{},
+                ).with_options(
                     FindOptions::builder()
                         .limit(1)
                         .max_time(Duration::from_secs(config.timeout()))
                         .max_await_time(Duration::from_secs(config.timeout()))
-                        .build(),
+                        .build()
                 )
                 .await
                 .map_err(|e| {
@@ -65,14 +67,11 @@ impl AppState {
         .unwrap_or_else(|_| panic!("Failed to connect to MongoDB within {} seconds. Please check your connection string.", config.timeout()))
         .ok();
 
-        let database = mongo_client.database(config.database().control_db_name.as_ref());
-        let oauths = MongoStore::<ConnectionOAuthDefinition>::new(
-            &database,
-            &Store::ConnectionOAuthDefinitions,
-        )
-        .await?;
-        let connections = MongoStore::<Connection>::new(&database, &Store::Connections).await?;
-        let event_access = MongoStore::<EventAccess>::new(&database, &Store::EventAccess).await?;
+        let oauths =
+            MongoStore::<ConnectionOAuthDefinition>::new(&db, &Store::ConnectionOAuthDefinitions)
+                .await?;
+        let connections = MongoStore::<Connection>::new(&db, &Store::Connections).await?;
+        let event_access = MongoStore::<EventAccess>::new(&db, &Store::EventAccess).await?;
 
         let oauths = Arc::new(oauths);
         let connections = Arc::new(connections);

@@ -1,9 +1,9 @@
 use crate::RefreshConfig;
-use integrationos_domain::{
-    environment::Environment, event_access::EventAccess, IntegrationOSError, InternalError,
-    MongoStore, Secret,
-};
 use mongodb::bson::doc;
+use osentities::{
+    environment::Environment, event_access::EventAccess, InternalError, MongoStore, PicaError,
+    Secret,
+};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -47,7 +47,7 @@ impl SecretsClient {
         id: &str,
         buildable_id: &str,
         environment: &Environment,
-    ) -> Result<T, IntegrationOSError> {
+    ) -> Result<T, PicaError> {
         let key = match environment {
             Environment::Test | Environment::Development => TEST_KEY,
             Environment::Live | Environment::Production => PRODUCTION_KEY,
@@ -91,7 +91,7 @@ impl SecretsClient {
         buildable_id: String,
         secret: T,
         environment: Environment,
-    ) -> Result<Secret, IntegrationOSError> {
+    ) -> Result<Secret, PicaError> {
         let payload = CreateSecretRequest {
             secret: serde_json::to_value(&secret).map_err(|e| {
                 warn!("Failed to serialize secret: {}", e);
