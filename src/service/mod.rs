@@ -11,7 +11,6 @@ use osentities::{
 use reqwest::Client;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use reqwest_tracing::TracingMiddleware;
 use serde_json::Value;
 use std::{sync::Arc, time::Duration};
 use tokio::time::timeout;
@@ -36,7 +35,6 @@ impl AppState {
             .map_err(|e| InternalError::io_err(e.to_string().as_str(), None))?;
         let client = ClientBuilder::new(client)
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .with(TracingMiddleware::default())
             .build();
         let mongo_client = mongodb::Client::with_uri_str(&config.database().control_db_url)
             .await

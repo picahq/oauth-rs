@@ -1,4 +1,4 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1.77.0 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS chef
 WORKDIR /app/oauth-refresh
 
 FROM chef AS planner
