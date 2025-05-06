@@ -1,7 +1,7 @@
 use handlebars::Handlebars;
-use integrationos_domain::{
+use osentities::{
     connection_oauth_definition::{Computation, ComputeRequest, ConnectionOAuthDefinition},
-    error::IntegrationOSError as Error,
+    error::PicaError as Error,
     oauth_secret::OAuthSecret,
     InternalError,
 };

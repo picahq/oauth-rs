@@ -1,7 +1,5 @@
 use envconfig::Envconfig;
-use integrationos_domain::{
-    database::DatabaseConfig, environment::Environment, secrets::SecretsConfig,
-};
+use osentities::{database::DatabaseConfig, environment::Environment, secrets::SecretsConfig};
 use std::fmt::Debug;
 
 #[derive(Clone, Envconfig)]
